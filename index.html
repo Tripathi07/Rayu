@@ -276,6 +276,10 @@
   .rsvp .btn { font-size: 1.05rem; padding: 0.8rem 1.5rem; }
   .btn.wa { background: #12803F; color: #fff; }
   .btn.no { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
+
+  .replay { margin-top: 1rem; font: inherit; font-weight: 700; font-size: 1rem; color: var(--ink); background: transparent; border: 0; box-shadow: inset 0 0 0 2px var(--ink); border-radius: 999px; padding: 0.6rem 1.3rem; cursor: pointer; }
+  .replay:hover { background: var(--card); }
+  .opened .replay { transition-delay: 2.2s; }
 </style>
 </head>
 <body>
@@ -319,6 +323,7 @@
       <p class="sub veil" data-i18n="sub"></p>
       <div id="countdown" class="veil"></div>
       <p class="bday veil" id="bday"></p>
+      <div><button type="button" class="replay veil" id="replay" data-i18n="replay"></button></div>
       <noscript><style>.veil{opacity:1!important;transform:none!important}</style></noscript>
     </header>
 
@@ -391,7 +396,8 @@
       rsvp_h: "Will you join us?",
       rsvp_p: "Let us know on WhatsApp. It takes two taps.",
       rsvp_yes: "Yes, we’re coming 🎈",
-      rsvp_no: "Sorry, we can’t make it"
+      rsvp_no: "Sorry, we can’t make it",
+      replay: "Replay the surprise 🎁"
     },
     de: {
       title: "Ryna wird zwei!",
@@ -410,7 +416,8 @@
       rsvp_h: "Kommt ihr?",
       rsvp_p: "Sagt uns kurz per WhatsApp Bescheid. Das geht mit zwei Klicks.",
       rsvp_yes: "Ja, wir kommen 🎈",
-      rsvp_no: "Leider können wir nicht"
+      rsvp_no: "Leider können wir nicht",
+      replay: "Überraschung nochmal 🎁"
     }
   };
 
@@ -611,6 +618,17 @@
     if (moved) { moved = false; return; }
     openGift();
   });
+
+  function resetGift() {
+    opened = false;
+    document.body.classList.remove("opened");
+    var sky = document.getElementById("sky");
+    if (sky) sky.innerHTML = "";
+    parts.length = 0;
+    ry = -30;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  document.getElementById("replay").addEventListener("click", resetGift);
 
   setLang(lang);
 })();
