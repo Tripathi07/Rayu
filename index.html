@@ -637,9 +637,23 @@
     } catch (e) { tune = null; }
     return tune;
   }
+  var looping = false, loopTimer = null;
   function playTune() {
     var a = getTune();
     if (!a) return;
+    looping = true;
+    clearTimeout(loopTimer);
+    if (!a._loopBound) {
+      a._loopBound = true;
+      // when the tune ends, wait a moment and start it again (loop), until stopped
+      a.addEventListener("ended", function () {
+        if (!looping) return;
+        loopTimer = setTimeout(function () {
+          if (!looping) return;
+          try { a.currentTime = 0; var q = a.play(); if (q && q.catch) q.catch(function () {}); } catch (e) {}
+        }, 1500);
+      });
+    }
     try {
       a.muted = muted;
       a.currentTime = 0;
@@ -648,9 +662,17 @@
     } catch (e) {}
   }
   function stopTune() {
+    looping = false;
+    clearTimeout(loopTimer);
     if (!tune) return;
     try { tune.pause(); tune.currentTime = 0; } catch (e) {}
   }
+  // pause when the guest leaves the page or switches app, continue when they come back
+  document.addEventListener("visibilitychange", function () {
+    if (!tune || !looping) return;
+    if (document.hidden) { try { tune.pause(); } catch (e) {} clearTimeout(loopTimer); }
+    else { try { var q = tune.play(); if (q && q.catch) q.catch(function () {}); } catch (e) {} }
+  });
   var snd = document.getElementById("snd");
   snd.addEventListener("click", function () {
     muted = !muted;
