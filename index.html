@@ -11,13 +11,13 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ryna turns two! · 21 November at Jaggis</title>
+<title>Ryna turns two! · 21 November</title>
 <meta name="author" content="Tripathis">
-<meta name="description" content="Ryna turns two! Birthday invitation: Saturday 21 November 2026, 11:30 – 16:00, Jaggis, Frankfurt.">
-<meta property="og:title" content="🎈 You’re invited: Ryna turns two! · 21 Nov, 11:30 · Jaggis">
-<meta property="og:description" content="Saturday 21 November 2026, 11:30 am – 4:00 pm, Jaggis Frankfurt. Tap to see details and where to park.">
+<meta name="description" content="Ryna turns two! Save the date: Saturday 21 November 2026. Open the gift to find out where and when.">
+<meta property="og:title" content="🎁 Ryna turns two! Save 21 Nov and open the gift">
+<meta property="og:description" content="Saturday 21 November 2026. Tap to unwrap the where and when!">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://tripathi07.github.io/Rayu/preview-v4.jpg">
+<meta property="og:image" content="https://tripathi07.github.io/Rayu/preview-v5.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:url" content="https://tripathi07.github.io/Rayu/">
@@ -285,6 +285,18 @@
   .replay { margin-top: 1rem; font: inherit; font-weight: 700; font-size: 1rem; color: var(--ink); background: transparent; border: 0; box-shadow: inset 0 0 0 2px var(--ink); border-radius: 999px; padding: 0.6rem 1.3rem; cursor: pointer; }
   .replay:hover { background: var(--card); }
   .opened .replay { transition-delay: 2.2s; }
+
+  /* closed state: only the gift box */
+  .after { display: none; }
+  .opened .after { display: block; animation: reveal .9s ease .9s both; }
+  @keyframes reveal { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+  body:not(.opened) .veil { display: none; }
+  .opened .veil { animation: veilin .8s ease both; }
+  .opened .sub { animation-delay: 1.2s; }
+  .opened #countdown { animation-delay: 1.5s; }
+  .opened .bday { animation-delay: 1.8s; }
+  .opened .replay { animation-delay: 2.2s; }
+  @keyframes veilin { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
@@ -329,9 +341,10 @@
       <div id="countdown" class="veil"></div>
       <p class="bday veil" id="bday"></p>
       <div><button type="button" class="replay veil" id="replay" data-i18n="replay"></button></div>
-      <noscript><style>.veil{opacity:1!important;transform:none!important}</style></noscript>
+      <noscript><style>.veil{display:block!important;opacity:1!important;transform:none!important}.after{display:block!important}</style></noscript>
     </header>
 
+    <div class="after" id="after">
     <section class="ticket" aria-label="Party details">
       <div class="stub">
         <span class="day">21</span>
@@ -379,6 +392,7 @@
         <p id="ioshint" hidden style="margin-top:.8rem;font-size:.95rem"></p>
       </div>
     </footer>
+    </div>
   </main>
 
 <script>
@@ -471,7 +485,7 @@
     for (var j = 0; j < btns.length; j++) {
       btns[j].setAttribute("aria-pressed", btns[j].getAttribute("data-lang") === l ? "true" : "false");
     }
-    document.title = dict.title + " · 21.11. Jaggis";
+    document.title = dict.title + " · 21.11.";
     tick();
   }
 

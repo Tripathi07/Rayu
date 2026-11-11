@@ -1,7 +1,7 @@
 {
   "name": "Turning Two! Birthday invitation",
   "short_name": "Birthday",
-  "description": "Second birthday party, Saturday 21 November 2026, 11:30 to 16:00, Jaggis Frankfurt.",
+  "description": "Ryna turns two! Save the date: Saturday 21 November 2026.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
