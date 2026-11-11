@@ -297,11 +297,16 @@
   .opened .bday { animation-delay: 1.8s; }
   .opened .replay { animation-delay: 2.2s; }
   @keyframes veilin { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+
+  .snd { position: absolute; top: 0.9rem; left: 1rem; z-index: 5; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 50%; background: var(--card); box-shadow: 0 0 0 1.5px var(--line); font-size: 1.15rem; line-height: 1; cursor: pointer; }
+  body:not(.opened) .snd { display: none; }
 </style>
 </head>
 <body>
   <div id="sky" aria-hidden="true"></div>
   <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <button type="button" class="snd" id="snd" aria-label="Sound on or off" aria-pressed="true">🔊</button>
 
   <div class="lang" role="group" aria-label="Language">
     <button type="button" data-lang="en" aria-pressed="true">EN</button>
@@ -618,6 +623,96 @@
     var r = two.getBoundingClientRect();
     return [r.left + r.width / 2, r.top + r.height * 0.55];
   }
+  /* Happy Birthday melody (public-domain tune) as a piano arrangement, synthesised with Web Audio */
+  var actx = null, master = null, chain = [], muted = false;
+  var NOTES = [
+    ["G4",.75],["G4",.25],["A4",1],["G4",1],["C5",1],["B4",2],
+    ["G4",.75],["G4",.25],["A4",1],["G4",1],["D5",1],["C5",2],
+    ["G4",.75],["G4",.25],["G5",1],["E5",1],["C5",1],["B4",1],["A4",1],
+    ["F5",.75],["F5",.25],["E5",1],["C5",1],["D5",1],["C5",2]
+  ];
+  var FREQ = { G4: 392.00, A4: 440.00, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99 };
+  var LH = [
+    [130.81, 196.00, 329.63], [98.00, 174.61, 246.94], [98.00, 174.61, 246.94], [130.81, 196.00, 329.63],
+    [130.81, 196.00, 329.63], [130.81, 233.08, 329.63], [87.31, 130.81, 220.00], [130.81, 196.00, 329.63]
+  ];
+  function tAt(b) {
+    var bd = 0.58;
+    if (b <= 18) return b * bd;
+    if (b <= 21) return 18 * bd + (b - 18) * bd * 1.15;
+    return 18 * bd + 3 * bd * 1.15 + (b - 21) * bd * 1.45;
+  }
+  function stopTune() {
+    try { if (master) { master.gain.cancelScheduledValues(0); master.gain.value = 0; master.disconnect(); } } catch (e) {}
+    chain.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
+    master = null; chain = [];
+  }
+  function pianoNote(f, start, dur, vel) {
+    var P = [[1, 1], [2, 0.32], [3, 0.12], [4, 0.04]];
+    var ring = 0.9 + dur * 0.9 + Math.min(1.6, 180 / f);
+    P.forEach(function (p, k) {
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = "sine";
+      o.frequency.value = f * p[0] * (1 + 0.0004 * k * k);
+      var peak = vel * p[1], end = start + ring / (1 + 0.45 * k);
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.linearRampToValueAtTime(peak, start + 0.012);
+      g.gain.exponentialRampToValueAtTime(peak * 0.5, start + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.0001, end);
+      o.connect(g); g.connect(master);
+      o.start(start); o.stop(end + 0.05);
+    });
+  }
+  function hallImpulse(sec) {
+    var len = Math.floor(actx.sampleRate * sec), b = actx.createBuffer(2, len, actx.sampleRate);
+    for (var c = 0; c < 2; c++) {
+      var d = b.getChannelData(c);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
+    }
+    return b;
+  }
+  function playTune() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!actx) actx = new AC();
+      if (actx.state === "suspended") actx.resume();
+      stopTune();
+      master = actx.createGain();
+      master.gain.value = 0.0001;
+      if (!muted) master.gain.linearRampToValueAtTime(0.14, actx.currentTime + 0.7);
+      var lp = actx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400;
+      var conv = actx.createConvolver(); conv.buffer = hallImpulse(1.8);
+      var wet = actx.createGain(); wet.gain.value = 0.34;
+      master.connect(lp); lp.connect(actx.destination);
+      lp.connect(conv); conv.connect(wet); wet.connect(actx.destination);
+      chain = [lp, conv, wet];
+      var t0 = actx.currentTime + 0.35, pos = 0, n, b, k;
+      for (n = 0; n < NOTES.length; n++) {
+        var d = NOTES[n][1], s = t0 + tAt(pos), dur = tAt(pos + d) - tAt(pos);
+        pianoNote(FREQ[NOTES[n][0]], s, n === NOTES.length - 1 ? dur * 1.6 : dur, 0.24);
+        pos += d;
+      }
+      for (b = 0; b < 8; b++) {
+        var base = 3 * b, arp = LH[b];
+        if (b < 7) {
+          for (k = 0; k < 3; k++) pianoNote(arp[k], t0 + tAt(base + k), tAt(base + k + 1) - tAt(base + k) + 0.2, k === 0 ? 0.13 : 0.07);
+        } else {
+          pianoNote(arp[0], t0 + tAt(21), 1.0, 0.13);
+          pianoNote(65.41, t0 + tAt(22), 2.2, 0.10);
+          for (k = 0; k < 3; k++) pianoNote(arp[k], t0 + tAt(22), 2.2, 0.07);
+        }
+      }
+    } catch (e) {}
+  }
+  var snd = document.getElementById("snd");
+  snd.addEventListener("click", function () {
+    muted = !muted;
+    snd.textContent = muted ? "🔇" : "🔊";
+    snd.setAttribute("aria-pressed", muted ? "false" : "true");
+    if (master) { master.gain.cancelScheduledValues(0); master.gain.value = muted ? 0 : 0.14; }
+  });
+
   function openGift() {
     var o = origin();
     if (!opened) {
@@ -627,6 +722,7 @@
       renderTitle(T[lang].title);
       burst(o[0], o[1], 150);
       release(18);
+      playTune();
       setTimeout(function () { var o2 = origin(); burst(o2[0], o2[1] - 120, 130); }, 450);
     } else {
       burst(o[0], o[1] - 120, 120);
@@ -644,6 +740,7 @@
     var sky = document.getElementById("sky");
     if (sky) sky.innerHTML = "";
     parts.length = 0;
+    stopTune();
     ry = -30;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
